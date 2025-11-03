@@ -1,0 +1,4 @@
+package com.security.api.service;
+import com.security.api.dto.PostRequest;import com.security.api.entity.Post;import com.security.api.repository.PostRepository;import org.owasp.encoder.Encode;import org.springframework.stereotype.Service;import java.util.List;
+@Service public class PostService { private final PostRepository repo; public PostService(PostRepository r){this.repo=r;}
+  public Post create(PostRequest req,String author){Post p=new Post();p.setTitle(Encode.forHtml(req.getTitle()));p.setContent(Encode.forHtml(req.getContent()));p.setAuthor(author);return repo.save(p);} public List<Post> list(){return repo.findAll();}}
