@@ -98,42 +98,30 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring.boot.version}</version>
       </plugin>
-      
+
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>9.0.0</version>
-        
-        <configuration>
-          <!-- NVD API Key передаётся через переменную свойства -->
-          <nvdApiKey>B0C76322-E9B8-F011-8364-0EBF96DE670D</nvdApiKey>
-          
-          <!-- Сканирование -->
-          <skipProvidedScope>true</skipProvidedScope>
-          <skipRuntimeScope>false</skipRuntimeScope>
-          <skipTestScope>true</skipTestScope>
-          
-          <!-- Порог критичности -->
-          <failBuildOnCVSS>7</failBuildOnCVSS>
-          
-          <!-- Кэш -->
-          <dataDirectory>${basedir}/.owasp</dataDirectory>
-          
-          <!-- Отчёты -->
-          <format>JSON</format>
-          <format>HTML</format>
-        </configuration>
-        
+        <version>12.1.5</version>
         <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
+            <execution>
+                <goals>
+                    <goal>check</goal>
+                </goals>
+                <phase>verify</phase>
+            </execution>
         </executions>
+        <configuration>
+            <format>HTML</format>
+            <outputDirectory>${project.build.directory}</outputDirectory>
+            <suppressionFile>${project.basedir}/dependency-check-suppression.xml</suppressionFile>
+            <!--suppress UnresolvedMavenProperty -->
+            <ossIndexUsername>${OSS_USERNAME}</ossIndexUsername>
+            <!--suppress UnresolvedMavenProperty -->
+            <ossIndexPassword>${OSS_API_TOKEN}</ossIndexPassword>
+            <knownExploitedUrl>https://raw.githubusercontent.com/cisagov/kev-data/main/known_exploited_vulnerabilities.json</knownExploitedUrl>
+        </configuration>
       </plugin>
-      
     </plugins>
   </build>
 </project>
