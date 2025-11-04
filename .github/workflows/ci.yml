@@ -20,7 +20,6 @@ jobs:
           java-version: '17'
           cache: maven
       
-      # ✅ СОЗДАТЬ build.properties ИЗ SECRETS
       - name: Create build.properties
         run: |
           cat > build.properties << EOF
@@ -29,11 +28,8 @@ jobs:
           oss.api.token=${{ secrets.OSS_API_TOKEN }}
           EOF
       
-      - name: Build & Test
-        run: mvn -B clean verify
-      
-      - name: OWASP Dependency Check
-        run: mvn org.owasp:dependency-check-maven:check
+      - name: Build, Test & Security Check
+        run: mvn -B clean verify org.owasp:dependency-check-maven:check
       
       - name: Upload OWASP Report
         if: always()
