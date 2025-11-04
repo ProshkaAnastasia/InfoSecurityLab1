@@ -2,3 +2,5 @@ target
 .owasp
 .vscode
 .DS_Store
+.env
+build.properties

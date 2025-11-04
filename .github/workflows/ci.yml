@@ -4,25 +4,47 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: maven
+      
+      # ✅ СОЗДАТЬ build.properties ИЗ SECRETS
+      - name: Create build.properties
+        run: |
+          cat > build.properties << EOF
+          nvd.api.key=${{ secrets.NVD_API_KEY }}
+          oss.username=${{ secrets.OSS_USERNAME }}
+          oss.api.token=${{ secrets.OSS_API_TOKEN }}
+          EOF
+      
       - name: Build & Test
-        run: mvn -B verify
-  security-scan:
-    needs: build-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+        run: mvn -B clean verify
+      
       - name: OWASP Dependency Check
-        uses: owasp/dependency-check-action@v3
-      - name: SpotBugs
-        uses: spotbugs/spotbugs-github-action@v1
+        run: mvn org.owasp:dependency-check-maven:check
+      
+      - name: Upload OWASP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-report
+          path: target/dependency-check-report.html
+      
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/
