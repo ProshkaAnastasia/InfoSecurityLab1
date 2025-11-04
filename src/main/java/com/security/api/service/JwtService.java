@@ -26,7 +26,6 @@ public class JwtService {
     return f.apply(allClaims(token));
   }
   
-  // ✅ ИСПРАВЛЕНО: используем parser() вместо parserBuilder()
   private Claims allClaims(String token) {
     return Jwts.parser()
       .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)))
