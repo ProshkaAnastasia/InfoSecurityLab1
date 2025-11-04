@@ -10,11 +10,13 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
 
+
 servers:
   - url: http://localhost:8080
     description: Local development server
   - url: https://api.example.com
     description: Production server
+
 
 tags:
   - name: Authentication
@@ -23,6 +25,7 @@ tags:
     description: CRUD operations for blog posts
   - name: Data
     description: Application data endpoints
+
 
 paths:
   /auth/register:
@@ -68,6 +71,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
 
+
   /auth/login:
     post:
       tags:
@@ -109,6 +113,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
+
 
   /api/posts:
     post:
@@ -161,11 +166,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
 
+
     get:
       tags:
         - Posts
       summary: Retrieve all posts
-      description: Get list of all blog posts (public endpoint)
+      description: Get list of all blog posts (requires JWT authentication)
       operationId: getAllPosts
       security:
         - BearerAuth: []
@@ -209,6 +215,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
   /api/data:
     get:
       tags:
@@ -243,13 +250,15 @@ paths:
               example:
                 error: Unauthorized access
 
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token received from /auth/login endpoint
+      description: JWT token received from /auth/login endpoint. Include in Authorization header as "Bearer {token}"
+
 
   schemas:
     UserRegistrationRequest:
@@ -276,6 +285,7 @@ components:
           description: User email address
           example: user@example.com
 
+
     AuthRequest:
       type: object
       required:
@@ -293,13 +303,14 @@ components:
           description: Password
           example: password123
 
+
     AuthResponse:
       type: object
       properties:
         token:
           type: string
           nullable: true
-          description: JWT token for authenticated requests
+          description: JWT token for authenticated requests (use in Authorization header as "Bearer {token}")
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         message:
           type: string
@@ -309,6 +320,7 @@ components:
           type: string
           description: Authenticated username
           example: user
+
 
     PostRequest:
       type: object
@@ -328,6 +340,7 @@ components:
           maxLength: 4000
           description: Post content (HTML will be escaped to prevent XSS)
           example: This is my blog post content
+
 
     Post:
       type: object
@@ -349,6 +362,7 @@ components:
           type: string
           description: Username of post author
           example: user
+
 
     User:
       type: object
@@ -378,6 +392,7 @@ components:
           example:
             - ROLE_USER
 
+
     ApplicationData:
       type: object
       properties:
@@ -399,6 +414,7 @@ components:
           description: Total number of users
           example: 2
 
+
     ErrorResponse:
       type: object
       properties:
@@ -406,6 +422,7 @@ components:
           type: string
           description: Error message
           example: Invalid input
+
 
     ValidationErrorResponse:
       type: object
@@ -423,31 +440,102 @@ components:
             username: Username is required
             email: Invalid email format
 
+
+x-request-headers:
+  required-for-authenticated-endpoints:
+    - name: Authorization
+      description: JWT Bearer token from /auth/login
+      example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNzMwNjM0NTQwLCJleHAiOjE3MzA2MzgxNDB9.xyz123"
+      required: true
+      
+  required-for-post-requests:
+    - name: Content-Type
+      description: Request body content type
+      example: "application/json"
+      required: true
+      
+  recommended-headers:
+    - name: User-Agent
+      description: Client application identifier
+      example: "curl/8.7.1"
+      required: false
+      
+    - name: X-Request-ID
+      description: Unique request identifier for tracking
+      example: "req-12345-abcde"
+      required: false
+
+
+x-curl-examples:
+  register:
+    description: Register a new user
+    command: |
+      curl -X POST http://localhost:8080/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{
+          "username": "newuser",
+          "password": "SecurePass123!",
+          "email": "newuser@example.com"
+        }'
+
+  login:
+    description: Login and receive JWT token
+    command: |
+      curl -X POST http://localhost:8080/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{
+          "username": "user",
+          "password": "password123"
+        }'
+
+  create-post:
+    description: Create a new post (requires JWT token)
+    command: |
+      curl -X POST http://localhost:8080/api/posts \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        -d '{
+          "title": "Security Best Practices",
+          "content": "This is my first post about cybersecurity"
+        }'
+
+  get-posts:
+    description: Get all posts (requires JWT token)
+    command: |
+      curl -X GET http://localhost:8080/api/posts \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+  get-data:
+    description: Get application data (requires JWT token)
+    command: |
+      curl -X GET http://localhost:8080/api/data \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+
 x-security-analysis:
   implemented:
-    - JWT Authentication with BCrypt (12 rounds)
+    - JWT Authentication with BCrypt (13 rounds)
     - XSS Protection via OWASP Encoder
     - SQL Injection Prevention via Spring Data JPA
     - Role-based Access Control (RBAC)
     - Spring Security SecurityFilterChain
     - Input Validation (Jakarta Validation)
-    - HTTP Security Headers (CSP, X-Frame-Options)
+    - HTTP Security Headers (CSP, X-Frame-Options, HSTS)
     - CSRF Protection disabled (correct for REST API)
     - CI/CD Security Scanning (OWASP Dependency-Check, SpotBugs)
   
   vulnerabilities:
     - CRITICAL: Hardcoded JWT secret (should be in environment)
     - CRITICAL: H2 console enabled (disable in production)
-    - HIGH: BCrypt rounds can be increased to 13-14
-    - MEDIUM: JWT expiration time is 1 hour (consider 15-30 mins)
+    - HIGH: JWT expiration time is 15 minutes (consider refresh tokens)
     - MEDIUM: No rate limiting on auth endpoints
-    - MEDIUM: No HTTPS enforcement configured
+    - MEDIUM: No HTTPS enforcement in development
   
   recommendations:
     - Move JWT secret to environment variables or AWS Secrets Manager
-    - Disable H2 console in production using profiles
+    - Disable H2 console in production using Spring profiles
     - Implement rate limiting (Bucket4j or Resilience4j)
-    - Add HTTPS/HSTS headers
+    - Add HTTPS/HSTS headers (already configured)
     - Implement refresh tokens for longer sessions
     - Add CORS configuration with domain whitelist
     - Increase password expiration and implement password policies

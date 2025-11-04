@@ -1,6 +1,8 @@
 target
 .owasp
 .vscode
-.DS_Store
+**/.DS_Store
 .env
 build.properties
+**/application-dev.properties
+**/application-prod.properties
