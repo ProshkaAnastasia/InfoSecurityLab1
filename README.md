@@ -58,12 +58,11 @@ src/
 
 ### 1. Аутентификация (Authentication)
 
-- **JWT (JSON Web Tokens)** - Stateless токены для каждого пользователя
-- **BCrypt** - Криптографическое хеширование паролей с солью (12 rounds)
-- **Token Expiration** - Токены действуют 1 час (требует оптимизации)
+- **JWT (JSON Web Tokens)**
+- **BCrypt**
+- **Token Expiration** 
 
 ```java
-// Генерация JWT токена
 String token = Jwts.builder()
     .setSubject(username)
     .setIssuedAt(new Date())
@@ -76,7 +75,6 @@ String token = Jwts.builder()
 
 - **Role-based Access Control** - ROLE_USER, ROLE_ADMIN
 - **Spring Security SecurityFilterChain** - URL pattern matching
-- **@PreAuthorize** - Method-level authorization (можно добавить)
 
 ```java
 .authorizeHttpRequests(auth -> auth
@@ -103,13 +101,12 @@ public Post create(PostRequest req, String author) {
 Spring Data JPA использует **PreparedStatements** автоматически:
 
 ```java
-// Не уязвимо для SQL injection
 Optional<User> user = repo.findByUsername(username);
 ```
 
 ### 5. CSRF Protection
 
-CSRF отключена явно (правильно для REST API):
+CSRF отключена явно:
 
 ```java
 .csrf(csrf -> csrf.disable())  // Correct for REST API (stateless)
