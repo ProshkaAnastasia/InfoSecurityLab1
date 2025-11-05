@@ -18,7 +18,6 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
 
-    // ===================== Authentication Exceptions =====================
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleUserNotFound(UsernameNotFoundException ex) {
@@ -29,7 +28,6 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", "Invalid credentials"));
     }
 
-    // ===================== Validation Exceptions =====================
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationError(MethodArgumentNotValidException ex) {
@@ -37,7 +35,7 @@ public class GlobalExceptionHandler {
 
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), "Invalid input")  // Generic message
+                fieldErrors.put(error.getField(), "Invalid input") 
         );
 
         Map<String, Object> response = new HashMap<>();
@@ -47,7 +45,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // ===================== Runtime/Generic Exceptions =====================
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
@@ -65,7 +62,6 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", errorMessage));
     }
 
-    // ===================== Catch-All Exception Handler =====================
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
@@ -76,7 +72,6 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", "An error occurred. Please try again later."));
     }
 
-    // ===================== Security-Related Exceptions =====================
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {

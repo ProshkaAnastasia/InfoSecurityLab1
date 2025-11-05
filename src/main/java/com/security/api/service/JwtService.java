@@ -24,14 +24,10 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    // ✅ ИСПРАВЛЕНИЕ: Правильная генерация Key из Base64 secret
     private Key key() {
         try {
-            // ✅ Использовать Decoders.BASE64 из io.jsonwebtoken
-            // Это поддерживает URL-safe base64 (с символами - и _)
             byte[] decodedKey = Decoders.BASE64.decode(secret);
             
-            // ✅ Убедиться, что secret достаточно длинный для HS256
             if (decodedKey.length < 32) {
                 logger.warn("JWT secret is shorter than recommended (32 bytes). Current: {} bytes", decodedKey.length);
             }

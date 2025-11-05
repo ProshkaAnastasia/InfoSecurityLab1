@@ -24,7 +24,6 @@ public class DataInitializer {
             if (userRepository.count() == 0) {
                 logger.info("Initializing test data (DEV profile only)");
 
-                // Test user
                 User testUser = new User();
                 testUser.setUsername("user");
                 testUser.setPassword(passwordEncoder.encode("password123"));
@@ -33,7 +32,6 @@ public class DataInitializer {
                 userRepository.save(testUser);
                 logger.info("Created test user: user/password123");
 
-                // Test admin
                 User testAdmin = new User();
                 testAdmin.setUsername("admin");
                 testAdmin.setPassword(passwordEncoder.encode("admin123"));
