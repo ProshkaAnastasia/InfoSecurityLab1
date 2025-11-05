@@ -2,6 +2,9 @@ package com.security.api.config;
 
 import com.security.api.filter.JwtAuthFilter;
 import com.security.api.service.UserDetailsServiceImpl;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +44,33 @@ public class SecurityConfig {
                     }
 
                     auth.anyRequest().authenticated();
+                })
+                .exceptionHandling(ex -> {
+                    // 401 — нет аутентификации
+                    ex.authenticationEntryPoint((request, response, authException) -> {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("""
+                            {
+                                "status": 401,
+                                "message": "Authentication required",
+                                "error": "No valid JWT token provided or token is expired"
+                            }
+                        """);
+                    });
+                    
+                    // 403 — нет прав
+                    ex.accessDeniedHandler((request, response, accessDeniedException) -> {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write("""
+                            {
+                                "status": 403,
+                                "message": "Access denied",
+                                "error": "You don't have permission to access this resource"
+                            }
+                        """);
+                    });
                 })
                 .headers(h -> {
                     h.httpStrictTransportSecurity(hsts -> hsts

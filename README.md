@@ -2,18 +2,18 @@
 
 Приватный Spring Boot 3.x проект, демонстрирующий защищённый REST API с JWT аутентификацией, защитой от OWASP Top 10 и интеграцией security-сканеров в CI/CD.
 
-## 📋 Обзор проекта
+## Обзор проекта
 
 Это учебное приложение для практики информационной безопасности на Java. Приложение реализует:
 
-- **JWT-based аутентификацию** с BCrypt хешированием паролей
-- **XSS защиту** через OWASP Java Encoder
-- **SQL Injection защиту** через Spring Data JPA (parameterized queries)
-- **Role-based Access Control** (RBAC)
-- **Security scanning** в CI/CD (OWASP Dependency-Check, SpotBugs)
-- **REST API** для управления постами и пользователями
+- JWT-based аутентификацию с BCrypt хешированием паролей
+- XSS защиту через OWASP Java Encoder
+- SQL Injection защиту через Spring Data JPA (parameterized queries)
+- Role-based Access Control (RBAC)
+- Security scanning в CI/CD (OWASP Dependency-Check, SpotBugs)
+- REST API для управления постами и пользователями
 
-## 🏗 Архитектура
+## Архитектура
 
 ```
 src/
@@ -54,13 +54,13 @@ src/
     └── java/...
 ```
 
-## 🔐 Механизмы безопасности
+## Механизмы безопасности
 
 ### 1. Аутентификация (Authentication)
 
 - **JWT (JSON Web Tokens)** - Stateless токены для каждого пользователя
 - **BCrypt** - Криптографическое хеширование паролей с солью (12 rounds)
-- **Token Expiration** - Токены действуют 1 час (⚠️ требует оптимизации)
+- **Token Expiration** - Токены действуют 1 час (требует оптимизации)
 
 ```java
 // Генерация JWT токена
@@ -112,7 +112,7 @@ Optional<User> user = repo.findByUsername(username);
 CSRF отключена явно (правильно для REST API):
 
 ```java
-.csrf(csrf -> csrf.disable())  // ✓ Correct for REST API (stateless)
+.csrf(csrf -> csrf.disable())  // Correct for REST API (stateless)
 ```
 
 ### 6. HTTP Security Headers
@@ -124,7 +124,7 @@ CSRF отключена явно (правильно для REST API):
 )
 ```
 
-## 🚀 API Endpoints
+## API Endpoints
 
 ### Authentication Endpoints
 
@@ -195,7 +195,7 @@ Content-Type: application/json
 
 {
   "title": "Security Best Practices",
-  "content": "<script>alert('xss')</script>"  // Will be escaped
+  "content": "<script>alert('xss')</script>"
 }
 ```
 
@@ -227,13 +227,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ]
 ```
 
-## ⚙️ Установка и запуск
+## Установка и запуск
 
 ### Требования
 
-- **Java 17+**
-- **Maven 3.8+**
-- **Git**
+- Java 17 или выше
+- Maven 3.8 или выше
+- Git
 
 ### Шаги для запуска
 
@@ -269,15 +269,15 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 | Username | Password | Role |
 |----------|----------|------|
-| `user` | `password123` | USER |
-| `admin` | `admin123` | USER, ADMIN |
+| user | password123 | USER |
+| admin | admin123 | USER, ADMIN |
 
-## 🐛 Тестирование API
+## Тестирование API
 
 ### Используя cURL
 
 ```bash
-# 1.登録 (Регистрация)
+# 1. Регистрация
 curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"Test123!","email":"test@example.com"}'
@@ -304,13 +304,7 @@ curl -X GET http://localhost:8080/api/posts \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### Используя Postman
-
-1. Импортировать `openapi.yaml` в Postman
-2. Set Environment: `base_url = http://localhost:8080`
-3. Запустить запросы из коллекции
-
-## 🔍 Security Scanning
+## Security Scanning
 
 ### OWASP Dependency-Check
 
@@ -320,7 +314,7 @@ curl -X GET http://localhost:8080/api/posts \
 mvn org.owasp:dependency-check-maven:check
 ```
 
-**Результаты:** `target/dependency-check-report.html`
+Результаты: `target/dependency-check-report.html`
 
 ### SpotBugs (Static Code Analysis)
 
@@ -330,99 +324,17 @@ mvn org.owasp:dependency-check-maven:check
 mvn spotbugs:gui
 ```
 
-## 📊 CI/CD Pipeline
+## CI/CD Pipeline
 
 GitHub Actions автоматически запускает при каждом push:
 
-1. ✅ **Maven Build & Test** (`mvn -B verify`)
-2. ✅ **OWASP Dependency-Check** (найти уязвимости в зависимостях)
-3. ✅ **SpotBugs** (статический анализ кода)
+1. Maven Build & Test (`mvn -B verify`)
+2. OWASP Dependency-Check (поиск уязвимостей в зависимостях)
+3. SpotBugs (статический анализ кода)
 
-Конфигурация: `.github/workflows/ci.yml`
+Конфигурация находится в файле `.github/workflows/ci.yml`
 
-## 🚨 Известные проблемы и рекомендации
-
-### CRITICAL 🔴
-
-1. **Hardcoded JWT Secret** (SEC-001)
-   - ⚠️ JWT секрет хардкодирован в коде (только base64)
-   - ✅ FIX: Переместить в `application-prod.properties` или environment variable
-   ```bash
-   export JWT_SECRET=$(openssl rand -base64 32)
-   ```
-
-2. **H2 Console Enabled** (SEC-003)
-   - ⚠️ H2 console доступна всем и позволяет выполнять SQL запросы
-   - ✅ FIX: Использовать profiles
-   ```yaml
-   spring:
-     h2:
-       console:
-         enabled: false  # disable in production
-   ```
-
-### HIGH 🟠
-
-3. **Password Hashing Strength** (SEC-004)
-   - ⚠️ BCrypt использует 12 rounds (минимум)
-   - ✅ FIX: Увеличить до 13-14 rounds
-   ```java
-   return new BCryptPasswordEncoder(13);  // Stronger
-   ```
-
-4. **User Data Exposure** (SEC-002)
-   - ⚠️ `/api/data` выдаёт список всех пользователей
-   - ✅ FIX: Использовать DTO, скрывать хеши паролей
-
-5. **Default Test Credentials** (SEC-005)
-   - ⚠️ Тестовые пользователи создаются автоматически
-   - ✅ FIX: Использовать `@Profile("dev")`
-
-### MEDIUM 🟡
-
-6. **Long JWT Expiration** (SEC-006)
-   - ⚠️ Токены действуют 1 час (длинный срок)
-   - ✅ FIX: Сократить до 15-30 минут, добавить refresh tokens
-
-7. **No HTTPS Enforcement** (SEC-007)
-   - ⚠️ Нет SSL/HTTPS конфигурации
-   - ✅ FIX: Добавить в `application-prod.properties`:
-   ```properties
-   server.ssl.key-store=classpath:keystore.jks
-   server.ssl.key-store-password=password
-   server.ssl.key-store-type=JKS
-   ```
-
-8. **No Rate Limiting** (SEC-010)
-   - ⚠️ Отсутствует защита от brute force
-   - ✅ FIX: Добавить Bucket4j или Resilience4j
-
-9. **No CORS Configuration** (SEC-008)
-   - ⚠️ Нет явной конфигурации CORS
-   - ✅ FIX: Добавить в `SecurityConfig`:
-   ```java
-   @Bean
-   public WebMvcConfigurer corsConfigurer() {
-       return new WebMvcConfigurer() {
-           @Override
-           public void addCorsMappings(CorsRegistry registry) {
-               registry.addMapping("/api/**")
-                   .allowedOrigins("https://yourdomain.com")
-                   .allowedMethods("GET", "POST", "PUT", "DELETE")
-                   .allowCredentials(true)
-                   .maxAge(3600);
-           }
-       };
-   }
-   ```
-
-### LOW 🔵
-
-10. **Generic Exception Handling** (SEC-012)
-    - ⚠️ Выдаются подробности ошибок
-    - ✅ FIX: Скрывать детали в production
-
-## 📦 Зависимости
+## Зависимости
 
 ```xml
 <!-- Spring Boot -->
@@ -445,32 +357,3 @@ GitHub Actions автоматически запускает при каждом
 <!-- Security Scanning -->
 <dependency-check-maven>8.4.0</dependency-check-maven>
 ```
-
-## 📚 Использованные стандарты
-
-- **OWASP Top 10 (2021)** - Основные уязвимости
-- **NIST Cybersecurity Framework** - Security practices
-- **CWE/SANS Top 25** - Common Weakness Enumeration
-- **Spring Security Best Practices** - Framework-specific security
-
-## 🔗 Полезные ссылки
-
-- [Spring Security Official Docs](https://spring.io/projects/spring-security)
-- [OWASP Java Encoder](https://owasp.org/www-project-java-encoder/)
-- [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
-- [OWASP Top 10](https://owasp.org/Top10/)
-- [NIST Password Guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html)
-
-## 📄 Лицензия
-
-MIT License - See LICENSE file for details
-
-## 👥 Автор
-
-**Anastasia Proshka** - InfoSecurityLab1
-
----
-
-**⚠️ Disclaimer:** Это учебное приложение создано в целях обучения информационной безопасности. Не используйте в production без полного аудита безопасности и внедрения всех рекомендаций.
-
-**Последнее обновление:** Ноябрь 2025
