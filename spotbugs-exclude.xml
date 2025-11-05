@@ -1,22 +1,27 @@
-<!-- Исключить тесты -->
-<Match>
-  <Class name="~.*Test(s)?$" />
-</Match>
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
 
-<!-- Spring @Autowired поля инициализирует Spring, не SpotBugs -->
-<Match>
-  <BugPattern name="NP_ALWAYS_NULL" />
-  <Annotation name="org.springframework.beans.factory.annotation.Autowired" />
-</Match>
+  <!-- Исключить тесты -->
+  <Match>
+    <Class name="~.*Test(s)?$" />
+  </Match>
 
-<!-- JPA @Entity - Hibernate управляет инициализацией -->
-<Match>
-  <BugPattern name="NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" />
-  <Annotation name="javax.persistence.Entity" />
-</Match>
+  <!-- Spring @Autowired поля инициализирует Spring, не SpotBugs -->
+  <Match>
+    <BugPattern name="NP_ALWAYS_NULL" />
+    <Annotation name="org.springframework.beans.factory.annotation.Autowired" />
+  </Match>
 
-<!-- DTO классы -->
-<Match>
-  <Class name="~.*DTO$|~.*Dto$" />
-  <BugPattern name="EI_EXPOSE_REP" />
-</Match>
+  <!-- JPA @Entity - Hibernate управляет инициализацией -->
+  <Match>
+    <BugPattern name="NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" />
+    <Annotation name="javax.persistence.Entity" />
+  </Match>
+
+  <!-- DTO классы -->
+  <Match>
+    <Class name="~.*DTO$|~.*Dto$" />
+    <BugPattern name="EI_EXPOSE_REP" />
+  </Match>
+
+</FindBugsFilter>

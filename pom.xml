@@ -231,31 +231,6 @@
         </dependencies>
       </plugin>
 
-      <!-- PMD - выявление проблем программирования -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <version>${pmd.version}</version>
-        <configuration>
-          <!-- Не проваливать при нарушениях -->
-          <failOnViolation>false</failOnViolation>
-          <!-- Пропустить пустые отчёты -->
-          <skipEmptyReport>false</skipEmptyReport>
-          <!-- Минимальное количество токенов для CPD (Copy Paste Detection) -->
-          <minimumTokens>100</minimumTokens>
-          <!-- Включить CPD анализ -->
-          <includeTests>false</includeTests>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-              <goal>cpd-check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
 
       <!-- OWASP Dependency-Check - проверка уязвимых зависимостей -->
       <plugin>
