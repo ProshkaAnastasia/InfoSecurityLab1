@@ -14,6 +14,17 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <spring.boot.version>3.5.6</spring.boot.version>
+    
+    <!-- SAST инструменты версии -->
+    <spotbugs.version>4.8.6.1</spotbugs.version>
+    <checkstyle.version>3.4.0</checkstyle.version>
+    <pmd.version>3.24.0</pmd.version>
+    <dependency-check.version>12.1.5</dependency-check.version>
+    
+    <!-- Пороги анализа -->
+    <spotbugs.effort>Max</spotbugs.effort>
+    <spotbugs.threshold>Medium</spotbugs.threshold>
+    <checkstyle.config>google_checks.xml</checkstyle.config>
   </properties>
   
   <dependencyManagement>
@@ -113,6 +124,7 @@
   <build>
     <plugins>
 
+      <!-- Properties Plugin для чтения конфигурации -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>properties-maven-plugin</artifactId>
@@ -132,6 +144,7 @@
         </executions>
       </plugin>
 
+      <!-- Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -142,52 +155,306 @@
         </configuration>
       </plugin>
       
+      <!-- Spring Boot Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring.boot.version}</version>
       </plugin>
 
+      <!-- =============== SAST АНАЛИЗАТОРЫ =============== -->
+
+      <!-- SpotBugs - поиск потенциальных ошибок в байт-коде Java -->
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.version}</version>
+        <configuration>
+          <!-- Уровень усилий (Low, Default, Max) -->
+          <effort>${spotbugs.effort}</effort>
+          <!-- Пороги (High, Medium, Low) -->
+          <threshold>${spotbugs.threshold}</threshold>
+          <!-- Генерировать XML отчёт -->
+          <xmlOutput>true</xmlOutput>
+          <!-- Не проваливать сборку -->
+          <failOnError>false</failOnError>
+          <!-- Выходная директория для XML -->
+          <findBugsXmlOutputDirectory>${project.build.directory}</findBugsXmlOutputDirectory>
+          <!-- Исключить определённые баги -->
+          <excludeFilterFile>${basedir}/spotbugs-exclude.xml</excludeFilterFile>
+          <!-- Включить тесты -->
+          <includeTests>false</includeTests>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Checkstyle - проверка стиля кода -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.version}</version>
+        <configuration>
+          <!-- Конфигурация (встроенная Google или ваша) -->
+          <configLocation>${checkstyle.config}</configLocation>
+          <!-- Исключить тесты -->
+          <includeTestSourceDirectory>false</includeTestSourceDirectory>
+          <!-- Уровень серьёзности (info, warning, error) -->
+          <violationSeverity>warning</violationSeverity>
+          <!-- Не проваливать при нарушениях -->
+          <failOnViolation>false</failOnViolation>
+          <failsOnError>false</failsOnError>
+          <!-- Кэширование результатов -->
+          <cacheFile>${project.build.directory}/checkstyle-cachefile</cacheFile>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <!-- Dependency для более новых версий checkstyle -->
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>10.12.5</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <!-- PMD - выявление проблем программирования -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${pmd.version}</version>
+        <configuration>
+          <!-- Не проваливать при нарушениях -->
+          <failOnViolation>false</failOnViolation>
+          <!-- Пропустить пустые отчёты -->
+          <skipEmptyReport>false</skipEmptyReport>
+          <!-- Минимальное количество токенов для CPD (Copy Paste Detection) -->
+          <minimumTokens>100</minimumTokens>
+          <!-- Включить CPD анализ -->
+          <includeTests>false</includeTests>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+              <goal>cpd-check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- OWASP Dependency-Check - проверка уязвимых зависимостей -->
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.1.5</version>
-
+        <version>${dependency-check.version}</version>
         <executions>
-            <execution>
-              <phase>verify</phase>
-              <goals>
-                <goal>check</goal>
-              </goals>
-            </execution>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
         </executions>
-
         <configuration>
-          <!-- NVD API Key передаётся через переменную свойства -->
+          <!-- NVD API Key (передаётся через переменные окружения) -->
           <nvdApiKey>${nvd.api.key}</nvdApiKey>
           
           <!-- Сканирование -->
           <skipProvidedScope>true</skipProvidedScope>
           <skipRuntimeScope>false</skipRuntimeScope>
           <skipTestScope>true</skipTestScope>
-
+          
+          <!-- OSS Index аутентификация -->
           <ossIndexUsername>${oss.username}</ossIndexUsername>
           <ossIndexPassword>${oss.api.token}</ossIndexPassword>
           
-          <!-- Порог критичности -->
+          <!-- Порог критичности (CVSS Score) для падения сборки -->
           <failBuildOnCVSS>7</failBuildOnCVSS>
           
-          <!-- Кэш -->
+          <!-- Кэширование данных NVD -->
           <dataDirectory>${basedir}/.owasp</dataDirectory>
           
-          <!-- Отчёты -->
+          <!-- Форматы отчётов -->
           <format>JSON</format>
           <format>HTML</format>
         </configuration>
       </plugin>
+
+      <!-- Maven Enforcer - проверка правил проекта -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <!-- Минимальная версия Maven -->
+                <requireMavenVersion>
+                  <version>3.6.0</version>
+                </requireMavenVersion>
+                <!-- Минимальная версия Java -->
+                <requireJavaVersion>
+                  <version>17</version>
+                </requireJavaVersion>
+                <!-- Нет дублирующихся зависимостей -->
+                <banDuplicatePomDependencyVersions/>
+                <!-- Требовать release версии зависимостей -->
+                <requireReleaseDeps>
+                  <excludes>
+                    <exclude>org.springframework.boot:*:*:*:*</exclude>
+                  </excludes>
+                </requireReleaseDeps>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- SonarQube Maven Plugin (опционально) -->
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>4.0.0.4121</version>
+      </plugin>
+
+      <!-- Maven Surefire Plugin для тестирования -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.1.2</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+
+      <!-- JaCoCo для покрытия кода -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.11</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
+
+  <!-- Профили для разных окружений -->
+  <profiles>
+    <!-- Профиль для локальной разработки (мягкие пороги) -->
+    <profile>
+      <id>dev</id>
+      <properties>
+        <spotbugs.threshold>Low</spotbugs.threshold>
+        <spotbugs.effort>Default</spotbugs.effort>
+      </properties>
+    </profile>
+
+    <!-- Профиль для CI/CD в production (жёсткие пороги) -->
+    <profile>
+      <id>prod</id>
+      <properties>
+        <spotbugs.threshold>High</spotbugs.threshold>
+        <spotbugs.effort>Max</spotbugs.effort>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <configuration>
+              <failOnError>true</failOnError>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <configuration>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Профиль для быстрой сборки (без анализа) -->
+    <profile>
+      <id>fast</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
-
-
-
