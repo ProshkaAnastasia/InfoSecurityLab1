@@ -1,0 +1,541 @@
+openapi: 3.0.0
+info:
+  title: Secure REST API
+  description: Spring Boot 3.x REST API с JWT аутентификацией и защитой от OWASP Top 10
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+
+tags:
+  - name: Authentication
+    description: User registration and authentication endpoints
+  - name: Posts
+    description: CRUD operations for blog posts
+  - name: Data
+    description: Application data endpoints
+
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with username, password, and email
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+            example:
+              username: newuser
+              password: SecurePass123!
+              email: newuser@example.com
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: null
+                message: User registered successfully
+                username: newuser
+        400:
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: User already exists
+        422:
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Login with username and password to receive JWT token
+      operationId: authenticateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+            example:
+              username: user
+              password: password123
+      responses:
+        200:
+          description: Login successful, JWT token received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNzMwNjM0NTQwLCJleHAiOjE3MzA2MzgxNDB9.xyz123
+                message: Authentication successful
+                username: user
+        401:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Invalid username or password
+        422:
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+
+  /api/posts:
+    post:
+      tags:
+        - Posts
+      summary: Create a new post
+      description: Create a blog post with XSS protection (HTML encoding)
+      operationId: createPost
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRequest'
+            example:
+              title: Security Best Practices
+              content: This is my first post about cybersecurity
+      responses:
+        200:
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+              example:
+                id: 1
+                title: Security Best Practices
+                content: This is my first post about cybersecurity
+                author: user
+        400:
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Unauthorized
+        422:
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+
+    get:
+      tags:
+        - Posts
+      summary: Retrieve all posts
+      description: Get list of all blog posts (requires JWT authentication)
+      operationId: getAllPosts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of posts to return
+          required: false
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Offset for pagination
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: List of posts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+              example:
+                - id: 1
+                  title: Security Best Practices
+                  content: This is my first post
+                  author: user
+                - id: 2
+                  title: JWT Security
+                  content: Understanding JWT tokens
+                  author: admin
+        401:
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/data:
+    get:
+      tags:
+        - Data
+      summary: Get application data
+      description: Retrieve application statistics and user information (requires authentication)
+      operationId: getApplicationData
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Application data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationData'
+              example:
+                message: Data retrieved successfully
+                requestedBy: user
+                users:
+                  - id: 1
+                    username: user
+                  - id: 2
+                    username: admin
+                count: 2
+        401:
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Unauthorized access
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token received from /auth/login endpoint. Include in Authorization header as "Bearer {token}"
+
+
+  schemas:
+    UserRegistrationRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Unique username
+          example: newuser
+        password:
+          type: string
+          minLength: 6
+          description: User password (will be hashed with BCrypt)
+          example: SecurePass123!
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+
+
+    AuthRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Username
+          example: user
+        password:
+          type: string
+          minLength: 1
+          description: Password
+          example: password123
+
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          nullable: true
+          description: JWT token for authenticated requests (use in Authorization header as "Bearer {token}")
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        message:
+          type: string
+          description: Response message
+          example: Authentication successful
+        username:
+          type: string
+          description: Authenticated username
+          example: user
+
+
+    PostRequest:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Post title
+          example: Security Best Practices
+        content:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: Post content (HTML will be escaped to prevent XSS)
+          example: This is my blog post content
+
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Post unique identifier
+          example: 1
+        title:
+          type: string
+          description: Post title
+          example: Security Best Practices
+        content:
+          type: string
+          description: Post content (HTML escaped)
+          example: This is my blog post content
+        author:
+          type: string
+          description: Username of post author
+          example: user
+
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: User unique identifier
+          example: 1
+        username:
+          type: string
+          description: Username
+          example: user
+        email:
+          type: string
+          format: email
+          description: User email
+          example: user@example.com
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+              - ROLE_USER
+              - ROLE_ADMIN
+          description: User roles
+          example:
+            - ROLE_USER
+
+
+    ApplicationData:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+          example: Data retrieved successfully
+        requestedBy:
+          type: string
+          description: Username who made the request
+          example: user
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+          description: List of all users
+        count:
+          type: integer
+          description: Total number of users
+          example: 2
+
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid input
+
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Validation error message
+          example: Validation failed
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field-level validation errors
+          example:
+            username: Username is required
+            email: Invalid email format
+
+
+x-request-headers:
+  required-for-authenticated-endpoints:
+    - name: Authorization
+      description: JWT Bearer token from /auth/login
+      example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNzMwNjM0NTQwLCJleHAiOjE3MzA2MzgxNDB9.xyz123"
+      required: true
+      
+  required-for-post-requests:
+    - name: Content-Type
+      description: Request body content type
+      example: "application/json"
+      required: true
+      
+  recommended-headers:
+    - name: User-Agent
+      description: Client application identifier
+      example: "curl/8.7.1"
+      required: false
+      
+    - name: X-Request-ID
+      description: Unique request identifier for tracking
+      example: "req-12345-abcde"
+      required: false
+
+
+x-curl-examples:
+  register:
+    description: Register a new user
+    command: |
+      curl -X POST http://localhost:8080/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{
+          "username": "newuser",
+          "password": "SecurePass123!",
+          "email": "newuser@example.com"
+        }'
+
+  login:
+    description: Login and receive JWT token
+    command: |
+      curl -X POST http://localhost:8080/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{
+          "username": "user",
+          "password": "password123"
+        }'
+
+  create-post:
+    description: Create a new post (requires JWT token)
+    command: |
+      curl -X POST http://localhost:8080/api/posts \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+        -d '{
+          "title": "Security Best Practices",
+          "content": "This is my first post about cybersecurity"
+        }'
+
+  get-posts:
+    description: Get all posts (requires JWT token)
+    command: |
+      curl -X GET http://localhost:8080/api/posts \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+  get-data:
+    description: Get application data (requires JWT token)
+    command: |
+      curl -X GET http://localhost:8080/api/data \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+
+x-security-analysis:
+  implemented:
+    - JWT Authentication with BCrypt (13 rounds)
+    - XSS Protection via OWASP Encoder
+    - SQL Injection Prevention via Spring Data JPA
+    - Role-based Access Control (RBAC)
+    - Spring Security SecurityFilterChain
+    - Input Validation (Jakarta Validation)
+    - HTTP Security Headers (CSP, X-Frame-Options, HSTS)
+    - CSRF Protection disabled (correct for REST API)
+    - CI/CD Security Scanning (OWASP Dependency-Check, SpotBugs)
+  
+  vulnerabilities:
+    - CRITICAL: Hardcoded JWT secret (should be in environment)
+    - CRITICAL: H2 console enabled (disable in production)
+    - HIGH: JWT expiration time is 15 minutes (consider refresh tokens)
+    - MEDIUM: No rate limiting on auth endpoints
+    - MEDIUM: No HTTPS enforcement in development
+  
+  recommendations:
+    - Move JWT secret to environment variables or AWS Secrets Manager
+    - Disable H2 console in production using Spring profiles
+    - Implement rate limiting (Bucket4j or Resilience4j)
+    - Add HTTPS/HSTS headers (already configured)
+    - Implement refresh tokens for longer sessions
+    - Add CORS configuration with domain whitelist
+    - Increase password expiration and implement password policies
